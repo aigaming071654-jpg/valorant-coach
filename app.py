@@ -3,42 +3,21 @@ import tempfile
 import os
 import time
 import google.generativeai as genai
-import streamlit as st
-
-hide_github_icon = """
-<style>
-/* 1. Hide the GitHub icon */
-.css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
-.styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
-.viewerBadge_text__1JaDK {
-    display: none;
-}
-
-/* 2. Hide the Hamburger Menu (Three dots) */
-#MainMenu {
-    visibility: hidden;
-}
-
-/* 3. Optional: Hide the top header bar completely */
-header {
-    visibility: hidden;
-}
-
-/* 4. Optional: Hide the 'Made with Streamlit' footer */
-footer {
-    visibility: hidden;
-}
-</style>
-"""
-
-st.markdown(hide_github_icon, unsafe_allow_html=True)
 from dotenv import load_dotenv
 
-# --- PASSWORD PROTECTION START ---
+# --- CONFIGURATION ---
+# Page Config makes the tab title look professional
+st.set_page_config(
+    page_title="Universal AI Coach",
+    page_icon="🎮",
+    layout="centered"
+)
+
+# --- 1. PASSWORD PROTECTION ---
 def check_password():
     """Returns `True` if the user had the correct password."""
     
-    # 1. Define the password (CHANGE THIS to whatever you want)
+    # CHANGE THIS to your desired password
     ACTUAL_PASSWORD = "valorant-access"
 
     def password_entered():
@@ -49,11 +28,9 @@ def check_password():
         else:
             st.session_state["password_correct"] = False
 
-    # 2. Check if password has been verified already
     if st.session_state.get("password_correct", False):
         return True
 
-    # 3. Show Input Field
     st.text_input(
         "Please enter the Investor Password:", 
         type="password", 
@@ -61,25 +38,20 @@ def check_password():
         key="password"
     )
     
-    # 4. Logic for incorrect password
     if "password_correct" in st.session_state and not st.session_state["password_correct"]:
         st.error("😕 Password incorrect")
         
     return False
 
-# IF PASSWORD IS WRONG, STOP HERE.
 if not check_password():
     st.stop()
-# --- PASSWORD PROTECTION END ---
 
-# --- YOUR MAIN APP STARTS BELOW (Only runs if password is correct) ---
-
-# 1. Load API Key
+# --- 2. LOAD API KEY ---
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 
 if not api_key:
-    # Try looking in Streamlit Secrets (for Cloud)
+    # Fallback for Streamlit Cloud Secrets
     if "GOOGLE_API_KEY" in st.secrets:
         api_key = st.secrets["GOOGLE_API_KEY"]
     else:
@@ -88,11 +60,58 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
-# 2. UI Layout
-st.title("Valorant AI Coach 🎯")
-st.write("Upload a gameplay clip (MP4) to get feedback.")
+# --- 3. THE MULTI-GAME BRAIN (PROMPT DICTIONARY) ---
+game_prompts = {
+    "Valorant": """
+        You are a Radiant-rank Valorant coach. Analyze this clip frame-by-frame.
+        Focus on:
+        1. **Crosshair Placement:** Was it at head level? Was the pre-aim correct?
+        2. **Movement:** Did they counter-strafe (stop) before shooting?
+        3. **Ability Usage:** Was utility used effectively or wasted?
+        Output format: "Estimated Rank", "Major Mistake", "Drill to Fix".
+    """,
+    "CS2 (Counter-Strike 2)": """
+        You are a Global Elite CS2 coach. Analyze this clip.
+        Focus on:
+        1. **Recoil Control:** Was the spray pattern controlled?
+        2. **Angle Isolation:** Did they peek one angle at a time or expose themselves to multiple?
+        3. **Utility:** Flash/Smoke usage timing.
+        Output format: "Estimated Rank", "Major Mistake", "Drill to Fix".
+    """,
+    "League of Legends": """
+        You are a Challenger-rank LoL coach. Analyze this clip.
+        Focus on:
+        1. **Spacing/Tethering:** Were they in range to deal damage but safe from threats?
+        2. **Camera Control:** Are they looking at the right things (map/objectives)?
+        3. **Skill Usage:** Did they hit skillshots or waste cooldowns?
+        Output format: "Estimated Rank", "Major Mistake", "Drill to Fix".
+    """,
+    "Overwatch 2": """
+        You are a Top 500 Overwatch coach. Analyze this clip.
+        Focus on:
+        1. **Positioning:** Are they safe relative to their Tank/Support?
+        2. **Target Priority:** Are they shooting the right enemy (Squishies vs Tank)?
+        3. **Ult Economy:** Was the Ultimate used at a good time?
+        Output format: "Estimated Rank", "Major Mistake", "Drill to Fix".
+    """,
+    "Rocket League": """
+        You are a Supersonic Legend Rocket League coach. Analyze this clip.
+        Focus on:
+        1. **Boost Management:** Are they feathering boost or wasting it?
+        2. **Rotation:** Are they rotating back-post on defense?
+        3. **Mechanics:** Quality of aerials/dribbles.
+        Output format: "Estimated Rank", "Major Mistake", "Drill to Fix".
+    """
+}
 
-uploaded_file = st.file_uploader("Upload Video", type=['mp4', 'mov'])
+# --- 4. THE UI LAYOUT ---
+st.title("Universal AI Gaming Coach 🎮")
+st.write("Upload a gameplay clip to get professional coaching feedback.")
+
+# Dropdown for Game Selection
+selected_game = st.selectbox("Select your Game:", list(game_prompts.keys()))
+
+uploaded_file = st.file_uploader(f"Upload a {selected_game} clip (MP4)", type=['mp4', 'mov'])
 
 if uploaded_file is not None:
     # Save video temporarily
@@ -102,13 +121,13 @@ if uploaded_file is not None:
 
     st.video(uploaded_file)
     
-    if st.button("Analyze Gameplay"):
-        with st.spinner('AI is watching (this takes ~20s)...'):
+    if st.button(f"Analyze {selected_game} Gameplay"):
+        with st.spinner(f'AI Coach is analyzing your {selected_game} mechanics...'):
             try:
-                # 3. Upload to Google
+                # Upload to Google
                 video_file = genai.upload_file(path=video_path)
                 
-                # 4. Wait for processing
+                # Wait for processing
                 while video_file.state.name == "PROCESSING":
                     time.sleep(2)
                     video_file = genai.get_file(video_file.name)
@@ -116,35 +135,19 @@ if uploaded_file is not None:
                 if video_file.state.name == "FAILED":
                     st.error("Video processing failed.")
                 else:
-                    # 5. Model Selection (Updated for 2026/Stability)
+                    # Robust Model Selection
                     try:
-                         # Try the new standard first
                          model = genai.GenerativeModel(model_name="gemini-2.5-flash")
                     except:
-                         # Fallback if 2.5 isn't available
                          model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")
                     
-                    # The "Pro" Coach Prompt
-                    prompt = """
-                    You are a strict, high-ELO Valorant coach (Immortal+ rank). 
-                    Analyze this gameplay clip frame-by-frame. Focus strictly on mechanics.
-
-                    Identify 3 specific errors:
-                    1. **Crosshair Placement:** Was it at head level? Was it holding wide or tight correctly for the angle?
-                    2. **Movement:** Did the player counter-strafe (stop moving) before shooting? Was there unnecessary W-keying?
-                    3. **Game Sense:** Did they clear angles properly or face-check?
-
-                    Format your response as a coaching report:
-                    * **Estimated Rank:** (Guess their rank based on this clip)
-                    * **Major Mistake:** (The #1 thing to fix)
-                    * **Drill to Fix:** (Suggest a specific training drill)
-                    """
+                    # GET THE SPECIFIC PROMPT FOR THE SELECTED GAME
+                    specific_prompt = game_prompts[selected_game]
                     
-                    response = model.generate_content([video_file, prompt])
+                    response = model.generate_content([video_file, specific_prompt])
                     
-                    st.subheader("Coach Feedback:")
-                    st.write(response.text)
-                
+                    st.subheader(f"🛡️ {selected_game} Coach Feedback:")
+                    st.markdown(response.text)
+                    
             except Exception as e:
                 st.error(f"Error details: {e}")
-
