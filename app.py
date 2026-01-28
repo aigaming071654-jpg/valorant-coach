@@ -12,6 +12,90 @@ st.set_page_config(
     page_icon="🎮",
     layout="centered"
 )
+def setup_gaming_theme():
+    """
+    Injects Cyberpunk-style CSS into the Streamlit app.
+    Colors: Deep Void Black, Neon Purple, Cyber Blue.
+    """
+    st.markdown("""
+    <style>
+        /* 1. IMPORT GAMING FONT (Rajdhani) */
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');
+
+        /* 2. GLOBAL RESET & BACKGROUND */
+        .stApp {
+            background-color: #09090b; /* Deep Void */
+            background-image: 
+                radial-gradient(circle at 50% 0%, #2a1b3d 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, #1a1a2e 0%, transparent 50%);
+            font-family: 'Rajdhani', sans-serif;
+        }
+        
+        /* 3. TYPOGRAPHY OVERRIDES */
+        h1, h2, h3 {
+            font-family: 'Rajdhani', sans-serif !important;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        h1 {
+            background: linear-gradient(90deg, #00f260 0%, #0575E6 100%); /* Neon Green to Blue */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            text-shadow: 0px 0px 30px rgba(5, 117, 230, 0.5);
+        }
+        
+        /* 4. CUSTOM BUTTON STYLING (The "Launch" Feel) */
+        .stButton > button {
+            background: linear-gradient(45deg, #7F00FF, #E100FF); /* Cyber Purple Gradient */
+            color: white;
+            border: none;
+            border-radius: 4px; /* Sharp corners for tech feel */
+            padding: 0.75rem 2rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(127, 0, 255, 0.4);
+            width: 100%;
+        }
+        
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(225, 0, 255, 0.6);
+            background: linear-gradient(45deg, #E100FF, #7F00FF);
+        }
+
+        /* 5. INPUT FIELDS & DROPDOWNS (Glassmorphism) */
+        .stSelectbox > div > div {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 4px;
+        }
+        
+        .stFileUploader {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        /* 6. SUCCESS/ERROR MESSAGES */
+        .stAlert {
+            background-color: rgba(20, 20, 20, 0.8);
+            border-left: 5px solid #00f260;
+            color: white;
+        }
+        
+        /* Hide standard Streamlit header/footer for immersion */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- 1. PASSWORD PROTECTION ---
 def check_password():
@@ -151,3 +235,4 @@ if uploaded_file is not None:
                     
             except Exception as e:
                 st.error(f"Error details: {e}")
+
