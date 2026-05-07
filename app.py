@@ -359,7 +359,7 @@ if uploaded_file is not None:
                     st.error("❌ Video processing failed. Please try again.")
                 else:
                     try:
-                        model = genai.GenerativeModel(model_name="gemini-2.0-flash-exp")
+                        model = genai.GenerativeModel(model_name="gemini-2.5-flash")
                     except:
                         try:
                             model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")
